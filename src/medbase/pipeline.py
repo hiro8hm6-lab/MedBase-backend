@@ -11,7 +11,7 @@ import img2pdf
 from pypdf import PdfReader
 
 from medbase.config import Settings
-from medbase.llm import GeminiProvider, MockProvider, Provider, wait_for_retry
+from medbase.llm import GeminiProvider, MockProvider, Provider, ProviderQuotaError, wait_for_retry
 from medbase.pdfs import (
     apply_rotations,
     crop_images,
@@ -146,6 +146,8 @@ class Pipeline:
                     validate(value)
                 atomic_json(checkpoint, value)
                 return value
+            except ProviderQuotaError as exc:
+                raise CallError(str(exc)) from None
             except Exception as exc:
                 last_error = safe_error(exc)
                 if attempt < 3:
@@ -488,6 +490,8 @@ class Pipeline:
                 except Exception as exc:
                     error = safe_error(exc)
                     retries = {str(q["q_id"]): attempt for q in group if attempt}
+                    if isinstance(exc, ProviderQuotaError):
+                        break
                     if attempt < 3:
                         wait_for_retry(exc, attempt)
             result = {"answers": {}, "errors": {str(q["q_id"]): error for q in group}, "retries": retries}

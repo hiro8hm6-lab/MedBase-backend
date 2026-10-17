@@ -15,6 +15,25 @@ SYSTEM = (
 )
 
 
+class ProviderQuotaError(RuntimeError):
+    """The provider's daily allowance needs an external change before retry."""
+
+
+def daily_quota_exhausted(exc: Exception) -> bool:
+    if getattr(exc, "code", None) != 429:
+        return False
+    details = getattr(exc, "details", {})
+    if not isinstance(details, dict):
+        return False
+    for detail in details.get("error", details).get("details", []):
+        if not isinstance(detail, dict):
+            continue
+        for violation in detail.get("violations", []):
+            if isinstance(violation, dict) and "PerDay" in violation.get("quotaId", ""):
+                return True
+    return False
+
+
 def wait_for_retry(exc: Exception, attempt: int) -> None:
     """Back off transient HTTP failures without retrying schema errors slowly."""
     if getattr(exc, "code", None) not in {408, 429, 500, 502, 503, 504}:
@@ -46,6 +65,7 @@ class GeminiProvider:
             raise ValueError("GEMINI_API_KEY is required; use LLM_MODE=mock only for synthetic tests")
         self.settings = settings
         self.audit_dir = audit_dir
+        self.quota_error = None
         self.client = genai.Client(
             api_key=settings.gemini_api_key.get_secret_value(),
             http_options=types.HttpOptions(timeout=settings.gemini_timeout_seconds * 1000,
@@ -53,7 +73,9 @@ class GeminiProvider:
         )
 
     def generate(self, task, prompt, schema, files, context):
-        from google.genai import types
+        from google.genai import errors, types
+        if self.quota_error:
+            raise self.quota_error
         uploaded = []
         contents = [types.Part.from_text(text=prompt + "\nCONTEXT JSON:\n" + json.dumps(context, ensure_ascii=False))]
         try:
@@ -95,6 +117,14 @@ class GeminiProvider:
                 stream.write(json.dumps({"at": now().isoformat(), "task": task,
                                          "model": self.settings.gemini_model, "usage": usage}) + "\n")
             return parsed.model_dump(exclude_none=True)
+        except errors.APIError as exc:
+            if daily_quota_exhausted(exc):
+                self.quota_error = ProviderQuotaError(
+                    "Geminiの1日あたりリクエスト上限に達しました。Google AI Studioの利用枠を確認し、"
+                    "上限のリセットまたは利用枠変更後にジョブを再試行してください。"
+                )
+                raise self.quota_error from None
+            raise
         finally:
             for remote in uploaded:
                 try:

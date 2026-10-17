@@ -9,7 +9,7 @@ from PIL import Image
 from pypdf import PdfReader, PdfWriter
 
 from medbase.fixtures import fixture_data, prepare_mock
-from medbase.llm import MockProvider
+from medbase.llm import MockProvider, ProviderQuotaError
 from medbase.pdfs import crop_images, merge_pdfs, normalize_input, pdf_chunks, render_page
 from medbase.pipeline import CallError, Pipeline, combine
 from medbase.schemas import Answer, Question, QuestionBatch, validate_answer
@@ -68,6 +68,37 @@ def test_failed_index_request_preserves_successful_checkpoints(settings, sample,
     with pytest.raises(CallError):
         InterruptedPipeline(settings, root).run(inputs, "author")
     assert len(list(root.rglob("index_0_0_0.json"))) == 1
+
+
+def test_daily_quota_is_not_retried_by_pipeline(settings, tmp_path):
+    class QuotaProvider:
+        calls = 0
+
+        def generate(self, *args, **kwargs):
+            self.calls += 1
+            raise ProviderQuotaError("daily allowance exhausted")
+
+    provider = QuotaProvider()
+    pipeline = Pipeline(settings, tmp_path, provider)
+    with pytest.raises(CallError, match="daily allowance"):
+        pipeline.call("index", "prompt", QuestionBatch, [], {}, tmp_path / "call.json")
+    assert provider.calls == 1
+
+
+def test_daily_quota_during_explanations_keeps_question_output(settings, sample, tmp_path):
+    root, inputs = pipeline_root(tmp_path, sample)
+
+    class QuotaProvider(MockProvider):
+        def generate(self, task, *args, **kwargs):
+            if task == "explain":
+                raise ProviderQuotaError("daily allowance exhausted")
+            return super().generate(task, *args, **kwargs)
+
+    result = Pipeline(settings, root, QuotaProvider(root / "mock_fixture.json")).run(inputs, "author")[0]
+    final = read_json(Path(result["directory"]) / "result.json")
+    assert result["question_count"] == result["error_count"] == 4
+    assert all(q["status"] == "error" and q["q_text"] for q in final["questions"])
+    assert final["questions"][1]["official_answer_text"] == "600"
 
 
 def test_chunk_resume_reuses_saved_analysis(sample, tmp_path, monkeypatch):
