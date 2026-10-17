@@ -94,6 +94,7 @@ curl.exe -X POST http://127.0.0.1:8000/api/v1/jobs `
 - 解説の失敗は初回＋最大3回再試行。失敗問題は問題情報を維持し、`status=error` と理由を出力します。欠落を成功扱いにしません。
 - 429や一時的なサーバー障害では待機して再試行し、成功済みの工程・解析用PDFを保持します。上限が続く場合はジョブを失敗として記録します。[AI Studioの利用制限](https://ai.google.dev/gemini-api/docs/rate-limits)を確認し、解消後にretry APIから再開できます。
 - 日次上限が明示された場合は同じ処理内の後続API呼び出しを止めます。解説工程で上限に達した場合も問題情報と成功済み解説を成果物に残し、未生成問題をエラーとして保存します。利用枠の変更後はretryで再開できます。
+- HTTP 402（Payment Required）も再試行を止めます。Google AI StudioのPrepayプランでは、[利用残高がなくなると402が返ります](https://ai.google.dev/gemini-api/docs/billing#prepay)。課金設定だけでなく利用可能な残高も確認してください。
 - Geminiへ一時アップロードしたファイルは処理後に削除を試みます。ログにはAPIキーや生のAPIエラーを記録しません。
 
 試験ごとのZIPには `result.json`、`result.schema.json`、`merged.pdf`、`clips/`、`pdf_merge_log.json`、`crop_log.json`、`merge_log.txt` と途中の問題・解説JSONを含めます。`page` は削除・回転を反映した統合PDFの物理ページ番号（1始まり）です。

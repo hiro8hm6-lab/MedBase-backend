@@ -16,7 +16,7 @@ SYSTEM = (
 
 
 class ProviderQuotaError(RuntimeError):
-    """The provider's daily allowance needs an external change before retry."""
+    """The provider's allowance needs an external change before retry."""
 
 
 def daily_quota_exhausted(exc: Exception) -> bool:
@@ -118,6 +118,12 @@ class GeminiProvider:
                                          "model": self.settings.gemini_model, "usage": usage}) + "\n")
             return parsed.model_dump(exclude_none=True)
         except errors.APIError as exc:
+            if exc.code == 402:
+                self.quota_error = ProviderQuotaError(
+                    "Gemini APIがHTTP 402（Payment Required）を返しました。"
+                    "キー発行元の課金状態・利用残高を確認してから再試行してください。"
+                )
+                raise self.quota_error from None
             if daily_quota_exhausted(exc):
                 self.quota_error = ProviderQuotaError(
                     "Geminiの1日あたりリクエスト上限に達しました。Google AI Studioの利用枠を確認し、"

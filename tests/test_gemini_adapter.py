@@ -50,22 +50,26 @@ def test_transient_request_retry_honors_server_delay(monkeypatch):
     assert waits == [42, 20]
 
 
-def test_daily_quota_stops_subsequent_requests_without_exposing_details(tmp_path):
+@pytest.mark.parametrize("code,details", [
+    (429, [{"violations": [
+        {"quotaId": "GenerateRequestsPerDayPerProjectPerModel-FreeTier", "quotaValue": "20"}
+    ]}]),
+    (402, []),
+])
+def test_usage_limit_stops_subsequent_requests_without_exposing_details(tmp_path, code, details):
     requests = []
 
     def handle(request):
         requests.append(request)
-        return httpx.Response(429, json={"error": {"code": 429, "status": "RESOURCE_EXHAUSTED",
-            "message": "private-provider-message", "details": [{"violations": [
-                {"quotaId": "GenerateRequestsPerDayPerProjectPerModel-FreeTier", "quotaValue": "20"}
-            ]}]}})
+        return httpx.Response(code, json={"error": {"code": code, "status": "RESOURCE_EXHAUSTED",
+            "message": "private-provider-message", "details": details}})
 
     provider = GeminiProvider(Settings(_env_file=None, gemini_api_key="synthetic-test-key"), tmp_path)
     provider.client = genai.Client(api_key="synthetic-test-key", http_options=types.HttpOptions(
         retry_options=types.HttpRetryOptions(attempts=1),
         httpx_client=httpx.Client(transport=httpx.MockTransport(handle))))
     for _ in range(2):
-        with pytest.raises(ProviderQuotaError, match="1日") as caught:
+        with pytest.raises(ProviderQuotaError, match="1日|402") as caught:
             provider.generate("explain", "Answer", AnswerBatch, [], {})
         assert "private-provider-message" not in str(caught.value)
     assert len(requests) == 1
