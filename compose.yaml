@@ -1,0 +1,63 @@
+name: medbase
+x-app: &app
+  image: medbase-backend:local
+  build: .
+  env_file:
+    - path: .env
+      required: false
+  environment: &environment
+    DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-medbase}:${POSTGRES_PASSWORD:-medbase-local-only}@db:5432/${POSTGRES_DB:-medbase}
+    STORAGE_ROOT: /app/storage
+    TZ: Asia/Tokyo
+    GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+    GEMINI_MODEL: ${GEMINI_MODEL:-gemini-3.8-flash}
+    LLM_MODE: ${LLM_MODE:-gemini}
+    AUTHOR_NAME: ${AUTHOR_NAME:-}
+  volumes:
+    - artifacts:/app/storage
+  init: true
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-medbase}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-medbase-local-only}
+      POSTGRES_DB: ${POSTGRES_DB:-medbase}
+    volumes:
+      - postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    restart: unless-stopped
+  migrate:
+    <<: *app
+    command: ["alembic", "upgrade", "head"]
+    depends_on:
+      db:
+        condition: service_healthy
+  api:
+    <<: *app
+    ports:
+      - "127.0.0.1:8000:8000"
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health/ready')"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+    restart: unless-stopped
+  worker:
+    <<: *app
+    command: ["python", "-m", "medbase.worker"]
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    restart: unless-stopped
+    stop_grace_period: 30s
+volumes:
+  postgres:
+  artifacts:

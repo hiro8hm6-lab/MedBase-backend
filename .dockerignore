@@ -1,0 +1,15 @@
+.git
+.env
+.env.*
+**/.env
+**/.env.*
+!.env.example
+.venv
+storage
+work
+outputs
+samples/local
+__pycache__
+.pytest_cache
+.ruff_cache
+**/*.pdf

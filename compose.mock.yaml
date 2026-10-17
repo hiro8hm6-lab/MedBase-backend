@@ -1,0 +1,7 @@
+services:
+  api:
+    environment:
+      LLM_MODE: mock
+  worker:
+    environment:
+      LLM_MODE: mock

@@ -1,0 +1,572 @@
+{
+  "$defs": {
+    "ErrorQuestion": {
+      "additionalProperties": false,
+      "properties": {
+        "q_id": {
+          "minimum": 1,
+          "title": "Q Id",
+          "type": "integer"
+        },
+        "exam_name": {
+          "title": "Exam Name",
+          "type": "string"
+        },
+        "page": {
+          "minimum": 1,
+          "title": "Page",
+          "type": "integer"
+        },
+        "series_index": {
+          "anyOf": [
+            {
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Series Index"
+        },
+        "series_total": {
+          "anyOf": [
+            {
+              "minimum": 2,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Series Total"
+        },
+        "depends_on": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "integer"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Depends On"
+        },
+        "q_text": {
+          "minLength": 1,
+          "title": "Q Text",
+          "type": "string"
+        },
+        "options": {
+          "anyOf": [
+            {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Options"
+        },
+        "images": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/ImageRef"
+              },
+              "minItems": 1,
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Images"
+        },
+        "official_answer": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "minItems": 1,
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Official Answer"
+        },
+        "official_answer_text": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Official Answer Text"
+        },
+        "status": {
+          "const": "error",
+          "title": "Status",
+          "type": "string"
+        },
+        "error": {
+          "minLength": 1,
+          "title": "Error",
+          "type": "string"
+        }
+      },
+      "required": [
+        "q_id",
+        "exam_name",
+        "page",
+        "q_text",
+        "status",
+        "error"
+      ],
+      "title": "ErrorQuestion",
+      "type": "object"
+    },
+    "Finding": {
+      "additionalProperties": false,
+      "properties": {
+        "label": {
+          "title": "Label",
+          "type": "string"
+        },
+        "finding": {
+          "minLength": 1,
+          "title": "Finding",
+          "type": "string"
+        }
+      },
+      "required": [
+        "label",
+        "finding"
+      ],
+      "title": "Finding",
+      "type": "object"
+    },
+    "ImageRef": {
+      "additionalProperties": false,
+      "properties": {
+        "label": {
+          "minLength": 1,
+          "title": "Label",
+          "type": "string"
+        },
+        "page": {
+          "minimum": 1,
+          "title": "Page",
+          "type": "integer"
+        },
+        "box_2d": {
+          "items": {
+            "type": "integer"
+          },
+          "maxItems": 4,
+          "minItems": 4,
+          "title": "Box 2D",
+          "type": "array"
+        },
+        "file": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "File"
+        }
+      },
+      "required": [
+        "label",
+        "page",
+        "box_2d"
+      ],
+      "title": "ImageRef",
+      "type": "object"
+    },
+    "OkQuestion": {
+      "additionalProperties": false,
+      "properties": {
+        "q_id": {
+          "minimum": 1,
+          "title": "Q Id",
+          "type": "integer"
+        },
+        "image_findings": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/Finding"
+              },
+              "minItems": 1,
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Image Findings"
+        },
+        "answer": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "minItems": 1,
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Answer"
+        },
+        "answer_text": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Answer Text"
+        },
+        "generated_options": {
+          "anyOf": [
+            {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Generated Options"
+        },
+        "generated_answer": {
+          "anyOf": [
+            {
+              "enum": [
+                "a",
+                "b",
+                "c"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Generated Answer"
+        },
+        "answer_source": {
+          "enum": [
+            "official",
+            "generated"
+          ],
+          "title": "Answer Source",
+          "type": "string"
+        },
+        "tags": {
+          "$ref": "#/$defs/Tags"
+        },
+        "explanation": {
+          "minLength": 1,
+          "title": "Explanation",
+          "type": "string"
+        },
+        "option_explanations": {
+          "anyOf": [
+            {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Option Explanations"
+        },
+        "exam_name": {
+          "title": "Exam Name",
+          "type": "string"
+        },
+        "page": {
+          "minimum": 1,
+          "title": "Page",
+          "type": "integer"
+        },
+        "series_index": {
+          "anyOf": [
+            {
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Series Index"
+        },
+        "series_total": {
+          "anyOf": [
+            {
+              "minimum": 2,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Series Total"
+        },
+        "depends_on": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "integer"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Depends On"
+        },
+        "q_text": {
+          "minLength": 1,
+          "title": "Q Text",
+          "type": "string"
+        },
+        "options": {
+          "anyOf": [
+            {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Options"
+        },
+        "images": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/ImageRef"
+              },
+              "minItems": 1,
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Images"
+        },
+        "official_answer": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "minItems": 1,
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Official Answer"
+        },
+        "official_answer_text": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Official Answer Text"
+        },
+        "status": {
+          "const": "ok",
+          "title": "Status",
+          "type": "string"
+        }
+      },
+      "required": [
+        "q_id",
+        "answer_source",
+        "tags",
+        "explanation",
+        "exam_name",
+        "page",
+        "q_text",
+        "status"
+      ],
+      "title": "OkQuestion",
+      "type": "object"
+    },
+    "Tags": {
+      "additionalProperties": false,
+      "properties": {
+        "diseases": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "minItems": 1,
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Diseases"
+        },
+        "keywords": {
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 10,
+          "minItems": 5,
+          "title": "Keywords",
+          "type": "array"
+        },
+        "question_type": {
+          "anyOf": [
+            {
+              "enum": [
+                "diagnosis",
+                "treatment",
+                "examination",
+                "pathophysiology",
+                "knowledge",
+                "calculation",
+                "ethics_law"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Question Type"
+        }
+      },
+      "required": [
+        "keywords"
+      ],
+      "title": "Tags",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "exam_name": {
+      "title": "Exam Name",
+      "type": "string"
+    },
+    "source_file": {
+      "title": "Source File",
+      "type": "string"
+    },
+    "author": {
+      "minLength": 1,
+      "title": "Author",
+      "type": "string"
+    },
+    "generated_at": {
+      "title": "Generated At",
+      "type": "string"
+    },
+    "total_questions": {
+      "minimum": 1,
+      "title": "Total Questions",
+      "type": "integer"
+    },
+    "questions": {
+      "items": {
+        "discriminator": {
+          "mapping": {
+            "error": "#/$defs/ErrorQuestion",
+            "ok": "#/$defs/OkQuestion"
+          },
+          "propertyName": "status"
+        },
+        "oneOf": [
+          {
+            "$ref": "#/$defs/OkQuestion"
+          },
+          {
+            "$ref": "#/$defs/ErrorQuestion"
+          }
+        ]
+      },
+      "title": "Questions",
+      "type": "array"
+    }
+  },
+  "required": [
+    "exam_name",
+    "source_file",
+    "author",
+    "generated_at",
+    "total_questions",
+    "questions"
+  ],
+  "title": "FinalDocument",
+  "type": "object"
+}
