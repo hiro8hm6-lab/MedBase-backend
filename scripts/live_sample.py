@@ -36,9 +36,24 @@ def main():
         print("Live sample job:", job_id, flush=True)
         deadline = time.monotonic() + 7200
         previous = None
+        disconnected = False
         while True:
-            response = client.get(f"/api/v1/jobs/{job_id}")
+            if time.monotonic() > deadline:
+                raise TimeoutError("Job still running; resume with --job-id " + job_id)
+            try:
+                response = client.get(f"/api/v1/jobs/{job_id}")
+                if response.status_code in {502, 503, 504}:
+                    raise httpx.ConnectError("API temporarily unavailable")
+            except httpx.TransportError:
+                if not disconnected:
+                    print("API temporarily unavailable; monitoring will resume automatically", flush=True)
+                disconnected = True
+                time.sleep(5)
+                continue
             response.raise_for_status()
+            if disconnected:
+                print("API connection restored", flush=True)
+                disconnected = False
             job = response.json()
             state = (job["status"], job["stage"], json.dumps(job["progress"], sort_keys=True))
             if state != previous:
@@ -46,8 +61,6 @@ def main():
                 previous = state
             if job["status"] in {"completed", "completed_with_errors", "failed"}:
                 break
-            if time.monotonic() > deadline:
-                raise TimeoutError("Job still running; resume with --job-id " + job_id)
             time.sleep(5)
         (args.output / "job.json").write_text(json.dumps(job, ensure_ascii=False, indent=2), encoding="utf-8")
         if job["status"] == "failed":
