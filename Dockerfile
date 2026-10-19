@@ -1,7 +1,7 @@
 FROM python:3.13-slim-bookworm
 ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 UV_COMPILE_BYTECODE=1 PATH="/app/.venv/bin:$PATH"
 WORKDIR /app
-RUN apt-get update && apt-get install -y --no-install-recommends poppler-utils ca-certificates \
+RUN apt-get update && apt-get install -y --no-install-recommends poppler-utils poppler-data fonts-noto-cjk ca-certificates \
     && rm -rf /var/lib/apt/lists/* \
     && pip install --no-cache-dir uv==0.9.2 \
     && useradd --create-home --uid 10001 medbase

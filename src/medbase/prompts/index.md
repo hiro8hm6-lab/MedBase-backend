@@ -22,8 +22,8 @@ top-left origin, enclosing figure edges AND captions. One figure may have many
 source_refs. Include figures on ordinary question pages as well as separate plates.
 
 official_answers: extract only printed official answers; use source_ref, answer
-(normalized lowercase a-l) OR answer_text for numerical/written answers. For
-example A075=600 is answer_text="600", never three choice letters. Restrict to
+(normalized lowercase a-l) OR answer_text for numerical/written answers.
+Preserve a printed numerical/written answer as a string, never as choice letters. Restrict to
 the requested booklet section when specified. Never infer an official answer.
 
 rotations: list pages that need 90/180/270 degrees CLOCKWISE rotation to become

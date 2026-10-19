@@ -28,7 +28,7 @@ jobs:
           version: 0.9.2
           python-version: '3.13'
           enable-cache: true
-      - run: sudo apt-get update && sudo apt-get install -y poppler-utils
+      - run: sudo apt-get update && sudo apt-get install -y poppler-utils poppler-data fonts-noto-cjk
       - run: uv sync --frozen
       - run: uv run ruff check .
       - run: uv run pytest -q
