@@ -4,6 +4,27 @@ from pypdf.generic import DecodedStreamObject, DictionaryObject, NameObject, Rec
 from medbase.pdfs import footer_only, merge_pdfs, render_page
 
 
+def test_japanese_cid_font_without_embedding_is_rendered(tmp_path):
+    from PIL import Image, ImageChops
+    from reportlab.pdfbase import pdfmetrics
+    from reportlab.pdfbase.cidfonts import UnicodeCIDFont
+    from reportlab.pdfgen import canvas
+
+    target = tmp_path / "japanese.pdf"
+    pdfmetrics.registerFont(UnicodeCIDFont("HeiseiMin-W3"))
+    document = canvas.Canvas(str(target), pagesize=(600, 800))
+    document.setFont("HeiseiMin-W3", 24)
+    document.drawString(60, 700, "日本語の問題文と選択肢")
+    document.save()
+    image = render_page(target, 1, dpi=72)
+    try:
+        text_area = image.crop((50, 65, 550, 115))
+        difference = ImageChops.difference(text_area, Image.new("RGB", text_area.size, "white")).convert("L")
+        assert sum(difference.histogram()[31:]) > 300, "Japanese CID text disappeared during PDF rendering"
+    finally:
+        image.close()
+
+
 def test_print_marks_outside_cropbox_do_not_hide_blank_pages(sample, tmp_path):
     writer = PdfWriter()
     page = writer.add_blank_page(width=600, height=800)
